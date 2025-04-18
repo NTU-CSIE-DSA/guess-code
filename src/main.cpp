@@ -13,7 +13,10 @@
 #include "ftxui/dom/elements.hpp"
 #include "ftxui/screen/color.hpp"
 
-const size_t MAX_PROBLEM{4};
+#include "nlohmann/json.hpp"
+using json = nlohmann::json;
+
+size_t problem_count{0};
 
 /// # Read problems
 /// This function reads the problem source files and stores them in an array of
@@ -34,9 +37,9 @@ const size_t MAX_PROBLEM{4};
 /// std::vector<std::string> problem_code[MAX_PROBLEM];
 /// read_problems(problem_source, problem_code);
 /// ```
-void read_problems(std::vector<std::string> &problem_source,
-                   std::vector<std::string> problem_code[MAX_PROBLEM]) {
-  for (size_t i = 0; i < MAX_PROBLEM; i++) {
+void read_problems(const std::vector<std::string> &problem_source,
+                   std::vector<std::string> problem_code[problem_count]) {
+  for (size_t i = 0; i < problem_count; ++i) {
     std::ifstream file("../problems/" + problem_source[i]);
     std::string line;
     while (std::getline(file, line)) {
@@ -58,10 +61,10 @@ void read_problems(std::vector<std::string> &problem_source,
 ///   revealed.
 /// - `MAX_PROBLEM`: The maximum number of problems.
 void build_components(ftxui::Components &tabs,
-                      std::vector<std::string> problem_code[MAX_PROBLEM],
-                      std::vector<bool> reveal_code[MAX_PROBLEM]) {
+                      std::vector<std::string> *problem_code,
+                      std::vector<bool> *reveal_code) {
   using namespace ftxui;
-  for (size_t i = 0; i < MAX_PROBLEM; ++i) {
+  for (size_t i = 0; i < problem_count; ++i) {
     const std::vector<std::string> &problem = problem_code[i];
     std::vector<bool> &reveal = reveal_code[i];
     reveal.resize(problem.size(), false);
@@ -121,25 +124,31 @@ void build_components(ftxui::Components &tabs,
 }
 
 int main() {
-  std::vector<std::string> problem_source = {
-      "quick-sort.c",
-      "robin-karp.c",
-      "bogo-sort.c",
-      "topological-sort.c",
-  };
-
-  std::vector<std::string> problem_code[MAX_PROBLEM];
+  std::ifstream config("../problems/problems.json");
+  if (!config.is_open()) {
+    std::cerr << "Error opening file." << std::endl;
+    return 1;
+  }
+  json j = json::parse(config);
+  if (j.is_null()) {
+    std::cerr << "Error parsing JSON." << std::endl;
+    return 1;
+  }
+  problem_count = j["problems"].size();
+  std::vector<std::string> problem_source(problem_count);
+  for (size_t i = 0; i < problem_count; ++i) {
+    problem_source[i] = j["problems"][i];
+  }
+  std::vector<std::string> problem_code[problem_count];
   read_problems(problem_source, problem_code);
 
   using namespace ftxui;
 
   int selected_prob = 0;
-  std::vector<std::string> tab_titles = {
-      "Problem 1",
-      "Problem 2",
-      "Problem 3",
-      "Problem 4",
-  };
+  std::vector<std::string> tab_titles;
+  for (size_t i = 0; i < problem_count; ++i) {
+    tab_titles.push_back("Problem " + std::to_string(i + 1));
+  }
   auto tab_toggle = Menu(&tab_titles, &selected_prob);
 
   int mouse_x = 0;
@@ -147,7 +156,7 @@ int main() {
   bool is_clicked = false;
 
   Components tabs;
-  std::vector<bool> reveal_code[MAX_PROBLEM];
+  std::vector<bool> reveal_code[problem_count];
   build_components(tabs, problem_code, reveal_code);
 
   auto tab = Container::Tab(tabs, &selected_prob);
