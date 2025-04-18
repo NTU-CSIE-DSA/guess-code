@@ -62,5 +62,5 @@ Contributions are welcome! Feel free to submit pull requests or open issues for 
 
 ## Credits
 
-Built using the [FTXUI](https://github.com/ArthurSonzogni/FTXUI) library for terminal user interfaces.
-
+- Built using the [FTXUI](https://github.com/ArthurSonzogni/FTXUI) library for terminal user interfaces.
+- Using [nlohmann/json](https://github.com/nlohmann/json) for JSON parsing.
