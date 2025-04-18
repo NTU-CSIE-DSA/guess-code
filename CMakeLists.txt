@@ -26,11 +26,22 @@ FetchContent_Declare(ftxui
 FetchContent_MakeAvailable(ftxui)
 # ------------------------------------------------------------------------------
 
+# ----- JSON ----------------------------------------------------------------
+include(FetchContent)
+
+FetchContent_Declare(json
+  URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz
+)
+FetchContent_MakeAvailable(json)
+# ---------------------------------------------------------------------------
+
 add_executable(guess-code src/main.cpp)
 target_include_directories(guess-code PRIVATE src)
 
 target_link_libraries(guess-code
   PRIVATE ftxui::screen
   PRIVATE ftxui::dom
-  PRIVATE ftxui::component  # Not needed for this example.
+  PRIVATE ftxui::component
 )
+
+target_link_libraries(guess-code PRIVATE nlohmann_json::nlohmann_json)
