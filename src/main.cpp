@@ -16,6 +16,7 @@
 #include "nlohmann/json.hpp"
 using json = nlohmann::json;
 
+const size_t MAX_PROBLEM = 40;
 size_t problem_count{0};
 
 /// # Read problems
@@ -37,8 +38,30 @@ size_t problem_count{0};
 /// std::vector<std::string> problem_code[MAX_PROBLEM];
 /// read_problems(problem_source, problem_code);
 /// ```
-void read_problems(const std::vector<std::string> &problem_source,
-                   std::vector<std::string> problem_code[problem_count]) {
+int read_problems(std::vector<std::string> &problem_source,
+                  std::vector<std::string> problem_code[problem_count]) {
+  std::ifstream config("../problems/problems.json");
+  if (!config.is_open()) {
+    std::cerr << "Error opening file." << std::endl;
+    return 1;
+  }
+  json j = json::parse(config);
+  if (j.is_null()) {
+    std::cerr << "Error parsing JSON." << std::endl;
+    return 1;
+  }
+  problem_count = j["problems"].size();
+  if (problem_count > MAX_PROBLEM) {
+    std::cerr << "Error: Too many problems." << std::endl;
+    return 1;
+  }
+  if (problem_count == 0) {
+    std::cerr << "Error: No problems found." << std::endl;
+    return 1;
+  }
+  for (size_t i = 0; i < problem_count; ++i) {
+    problem_source[i] = j["problems"][i];
+  }
   for (size_t i = 0; i < problem_count; ++i) {
     std::ifstream file("../problems/" + problem_source[i]);
     std::string line;
@@ -46,6 +69,7 @@ void read_problems(const std::vector<std::string> &problem_source,
       problem_code[i].push_back(line);
     }
   }
+  return 0;
 }
 
 /// # Build the components
@@ -124,23 +148,11 @@ void build_components(ftxui::Components &tabs,
 }
 
 int main() {
-  std::ifstream config("../problems/problems.json");
-  if (!config.is_open()) {
-    std::cerr << "Error opening file." << std::endl;
-    return 1;
+  std::vector<std::string> problem_source(MAX_PROBLEM);
+  std::vector<std::string> problem_code[MAX_PROBLEM];
+  if (read_problems(problem_source, problem_code) != 0) {
+    return -1;
   }
-  json j = json::parse(config);
-  if (j.is_null()) {
-    std::cerr << "Error parsing JSON." << std::endl;
-    return 1;
-  }
-  problem_count = j["problems"].size();
-  std::vector<std::string> problem_source(problem_count);
-  for (size_t i = 0; i < problem_count; ++i) {
-    problem_source[i] = j["problems"][i];
-  }
-  std::vector<std::string> problem_code[problem_count];
-  read_problems(problem_source, problem_code);
 
   using namespace ftxui;
 
