@@ -20,6 +20,7 @@ Guess Code is an educational tool designed to help users learn programming algor
 2. Click on hidden (dark) lines of code to reveal them
 3. Track your progress with the progress bar at the bottom
 4. Try to understand the algorithm before revealing all lines
+5. Make sure your terminal is large enough (at least 45 rows and 128 columns) to view the code properly
 
 ## Building the Project
 
