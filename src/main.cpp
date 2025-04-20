@@ -3,6 +3,8 @@
 #include <fstream>
 #include <memory>
 #include <string>
+#include <sys/ioctl.h>
+#include <unistd.h>
 #include <vector>
 
 #include "ftxui/component/component.hpp"
@@ -17,6 +19,7 @@
 using json = nlohmann::json;
 
 const size_t MAX_PROBLEM = 40;
+const size_t MAX_LINE = 80;
 size_t problem_count{0};
 
 /// # Read problems
@@ -42,21 +45,21 @@ int read_problems(std::vector<std::string> &problem_source,
                   std::vector<std::string> problem_code[problem_count]) {
   std::ifstream config("../problems/problems.json");
   if (!config.is_open()) {
-    std::cerr << "Error opening file." << std::endl;
+    std::cerr << "Error: cannot open problem.json" << std::endl;
     return 1;
   }
   json j = json::parse(config);
   if (j.is_null()) {
-    std::cerr << "Error parsing JSON." << std::endl;
+    std::cerr << "Error: cannot parse JSON" << std::endl;
     return 1;
   }
   problem_count = j["problems"].size();
   if (problem_count > MAX_PROBLEM) {
-    std::cerr << "Error: Too many problems." << std::endl;
+    std::cerr << "Error: too many problems" << std::endl;
     return 1;
   }
   if (problem_count == 0) {
-    std::cerr << "Error: No problems found." << std::endl;
+    std::cerr << "Error: no problems found" << std::endl;
     return 1;
   }
   for (size_t i = 0; i < problem_count; ++i) {
@@ -67,6 +70,10 @@ int read_problems(std::vector<std::string> &problem_source,
     std::string line;
     while (std::getline(file, line)) {
       problem_code[i].push_back(line);
+    }
+    if (problem_code[i].empty() || problem_code[i].size() > MAX_LINE) {
+      std::cerr << "Error: problem code empty or too long." << std::endl;
+      return 1;
     }
   }
   return 0;
@@ -155,6 +162,19 @@ int main() {
   }
 
   using namespace ftxui;
+  // Check if the terminal size is large enough, use the C method
+  // to get the terminal size.
+  struct winsize w;
+  if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) == -1) {
+    std::cerr << "Error: get terminal size." << std::endl;
+    return -1;
+  }
+  if (w.ws_col < 128 || w.ws_row < 45) {
+    std::cerr << "Error: terminal size is too small." << std::endl;
+    return -1;
+  }
+
+  auto screen = ScreenInteractive::Fullscreen();
 
   int selected_prob = 0;
   std::vector<std::string> tab_titles;
@@ -200,6 +220,5 @@ int main() {
            border;
   });
 
-  auto screen = ScreenInteractive::Fullscreen();
   screen.Loop(component_renderer);
 }
