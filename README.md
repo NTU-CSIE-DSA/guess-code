@@ -17,7 +17,12 @@ Guess Code is an educational tool designed to help users learn programming algor
 ## How to Use
 
 1. Navigate the problems using the tab menu on the right
-2. Click on hidden (dark) lines of code to reveal them
+2. Reveal lines of code using one of these methods:
+   - Click on hidden (dark) lines of code to reveal them
+   - Type line numbers in the input box and press Enter (examples: "5", "1,3,7")
+   - Type a range of line numbers (example: "1-10")
+   - Type a list of ranges (example: "1-10,20")
+   - Type "all" to reveal the entire implementation at once
 3. Track your progress with the progress bar at the bottom
 4. Try to understand the algorithm before revealing all lines
 5. Make sure your terminal is large enough (at least 45 rows and 128 columns) to view the code properly
