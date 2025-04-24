@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <fstream>
+#include <ftxui/component/component_options.hpp>
 #include <memory>
 #include <string>
 #include <sys/ioctl.h>
@@ -18,8 +19,8 @@
 #include "nlohmann/json.hpp"
 using json = nlohmann::json;
 
-const size_t MAX_PROBLEM = 40;
-const size_t MAX_LINE = 80;
+constexpr size_t MAX_PROBLEM = 40;
+constexpr size_t MAX_LINE = 80;
 size_t problem_count{0};
 
 /// # Read problems
@@ -170,7 +171,9 @@ int main() {
     return -1;
   }
   if (w.ws_col < 128 || w.ws_row < 45) {
-    std::cerr << "Error: terminal size is too small." << std::endl;
+    std::cerr
+        << "Error: terminal size is too small. Expect 45 rows and 128 cols."
+        << std::endl;
     return -1;
   }
 
@@ -181,43 +184,93 @@ int main() {
   for (size_t i = 0; i < problem_count; ++i) {
     tab_titles.push_back("Problem " + std::to_string(i + 1));
   }
-  auto tab_toggle = Menu(&tab_titles, &selected_prob);
+
+  std::string input;
+  std::vector<bool> reveal_code[MAX_PROBLEM];
+  auto hint = Renderer([&] { return vbox({text("Reveal line(s): ")}); });
+  auto input_handler = Input(&input, "type here");
+  input_handler = CatchEvent(input_handler, [&](Event event) {
+    if (event.is_mouse())
+      return false;
+    if (event == Event::Return) {
+      if (!input.empty()) {
+        if (input == "all") {
+          for (size_t i = 0; i < problem_code[selected_prob].size(); ++i) {
+            reveal_code[selected_prob][i] = true;
+          }
+        }
+
+        // Use the input to reveal lines, the input can either be a single
+        // number or a range of numbers.
+        // For example: 1 or 1-3, or 1,2,3
+
+        // Check the input validity
+        std::vector<std::string> lines;
+        size_t pos = 0;
+        while ((pos = input.find(',')) != std::string::npos) {
+          lines.push_back(input.substr(0, pos));
+          input.erase(0, pos + 1);
+        }
+        lines.push_back(input);
+        input.clear();
+        for (auto &line : lines) {
+          for (char &c : line) {
+            if (!isdigit(c) && c != '-') {
+              input.clear();
+              return true;
+            }
+          }
+        }
+
+        // For each line, check if it is a range or a single number
+        for (const auto &line : lines) {
+          size_t dash_pos = line.find('-');
+          if (dash_pos != std::string::npos) {
+            // Range
+            int start = std::stoi(line.substr(0, dash_pos));
+            int end = std::stoi(line.substr(dash_pos + 1));
+            for (int i = start; i <= end; ++i) {
+              if (i > 0 && i <= problem_code[selected_prob].size()) {
+                reveal_code[selected_prob][i - 1] = true;
+              }
+            }
+          } else {
+            // Single number
+            int line_num = std::stoi(line);
+            if (line_num > 0 &&
+                line_num <= problem_code[selected_prob].size()) {
+              reveal_code[selected_prob][line_num - 1] = true;
+            }
+          }
+        }
+      }
+      return true;
+    }
+    return false;
+  });
+  auto input_component = Container::Horizontal({hint, input_handler});
+
+  auto tab_toggle = Container::Vertical({
+      Menu(&tab_titles, &selected_prob),
+      input_component,
+  });
 
   int mouse_x = 0;
   int mouse_y = 0;
   bool is_clicked = false;
 
   Components tabs;
-  std::vector<bool> reveal_code[problem_count];
   build_components(tabs, problem_code, reveal_code);
 
   auto tab = Container::Tab(tabs, &selected_prob);
-
-  // This capture the last mouse position.
-  auto tab_with_mouse = CatchEvent(tab, [&](Event e) {
-    if (e.is_mouse()) {
-      mouse_x = e.mouse().x;
-      mouse_y = e.mouse().y - 2;
-      if (e.mouse().button == Mouse::Button::Left) {
-        if (mouse_x >= 57 && reveal_code[selected_prob].size() <= 40) {
-          reveal_code[selected_prob][mouse_y] = true;
-        } else {
-          reveal_code[selected_prob][mouse_y + 40 * (mouse_x >= 57)] = true;
-        }
-      }
-    }
-    return false;
-  });
-
   auto component = Container::Horizontal({
-      tab_with_mouse,
+      tab,
       tab_toggle,
   });
 
   // Add some separator to decorate the whole component:
   auto component_renderer = Renderer(component, [&] {
-    return hbox({tab_with_mouse->Render(), separator(), tab_toggle->Render()}) |
-           border;
+    return hbox({tab->Render(), separator(), tab_toggle->Render()}) | border;
   });
 
   screen.Loop(component_renderer);
