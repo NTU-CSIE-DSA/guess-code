@@ -2,15 +2,15 @@
 
 int a[100];
 
-void function(int left, int right) {
-  if (right - left < 2) {
+void function(int l, int r) {
+  if (r - l < 2) {
     return;
   }
-  int pivot = a[left];
-  int i = left + 1;
+  int t = a[l];
+  int i = l + 1;
 
-  for (int j = i; j < right; ++j) {
-    if (a[j] < pivot) {
+  for (int j = i; j < r; ++j) {
+    if (a[j] < t) {
       int tmp = a[i];
       a[i] = a[j];
       a[j] = tmp;
@@ -19,11 +19,11 @@ void function(int left, int right) {
   }
 
   int tmp = a[i - 1];
-  a[i - 1] = a[left];
-  a[left] = tmp;
+  a[i - 1] = a[l];
+  a[l] = tmp;
 
-  function(left, i - 1);
-  function(i, right);
+  function(l, i - 1);
+  function(i, r);
 }
 
 int main() {
