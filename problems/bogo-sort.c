@@ -1,7 +1,9 @@
 #include <stdio.h>
 
 int x = 0;
-int functionE() { return x = (x * 89 + 64) % 24128999; }
+int functionE() {
+  return x = (x * 89 + 64) % 24128999;
+}
 void functionD(int *g, int *h) {
   int i = *g;
   *g = *h;
@@ -29,7 +31,6 @@ int main() {
   int a[] = {3, 2, 5, 1, 4, 6, 9, 8, 7};
   int b = sizeof(a) / sizeof(a[0]);
   functionA(a, b);
-
   for (int i = 0; i < b; i++) {
     printf("%d ", a[i]);
   }
