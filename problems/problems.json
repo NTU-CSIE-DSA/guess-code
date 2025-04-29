@@ -1,0 +1,10 @@
+{
+  "problems": [
+    "quick-sort.c",
+    "robin-karp.c",
+    "bogo-sort.c",
+    "bubble-sort.c",
+    "brackets.c",
+    "topological-sort.c"
+  ]
+}
