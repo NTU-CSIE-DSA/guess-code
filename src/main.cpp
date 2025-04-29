@@ -43,7 +43,7 @@ size_t problem_count{0};
 /// read_problems(problem_source, problem_code);
 /// ```
 int read_problems(std::vector<std::string> &problem_source,
-                  std::vector<std::string> problem_code[problem_count]) {
+                  std::vector<std::string> *problem_code) {
   std::ifstream config("../problems/problems.json");
   if (!config.is_open()) {
     std::cerr << "Error: cannot open problem.json" << std::endl;
